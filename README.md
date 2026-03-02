@@ -1,0 +1,2 @@
+# Doktol
+Pendeteksi penyakit kamu 
