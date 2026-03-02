@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Deteksi Penyakit & Solusi</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --success: #27ae60;
+            --selected: #f39c12;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .selected-count {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        /* --- GAYA GEJALA YANG BISA DIKLIK --- */
+        .symptom-chip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 15px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            font-weight: 500;
+            color: #495057;
+            text-align: center;
+        }
+
+        .symptom-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-color: var(--secondary);
+        }
+
+        /* Estado ketika gejala dipilih */
+        .symptom-chip.selected {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        /* Icon centang di dalam chip */
+        .symptom-chip .check-icon {
+            display: none;
+            margin-right: 6px;
+        }
+
+        .symptom-chip.selected .check-icon {
+            display: inline;
+        }
+
+        button.diagnose-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button.diagnose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.5);
+        }
+
+        button.diagnose-btn:active {
+            transform: translateY(0);
+        }
+
+        #result-area {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .disease-card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            background: #fff;
+            border-left: 6px solid var(--accent);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .disease-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .disease-title {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .match-percent {
+            background: var(--success);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .symptoms-matched {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .remedy-box {
+            background-color: #eafaf1;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--success);
+        }
+
+        .remedy-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .remedy-box li {
+            margin-bottom: 5px;
+        }
+
+        .source-box {
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+
+        .hospital-box {
+            background-color: #fdedec;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .clear-btn {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .clear-btn button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .clear-btn button:hover {
+            background: #5a6268;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🩺 Aplikasi Deteksi Penyakit & Solusi</h1>
+    
+    <div class="warning-box">
+        <strong>⚠️ PERINGATAN PENTING:</strong> 
+        Aplikasi ini hanya untuk <strong>tujuan informasi/edukasi</strong> dan <strong>BUKAN pengganti diagnosa dokter profesional</strong>. 
+        Jika kondisi Anda serius, <strong>segeralah ke Rumah Sakit</strong>.
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="symptomSearch" placeholder="🔎 Ketik nama gejala untuk mencari..." onkeyup="filterSymptoms()">
+    </div>
+
+    <div class="selected-count" id="selectedCount">Gejala dipilih: 0</div>
+
+    <p><strong>Klik pada gejala yang Anda rasakan:</strong></p>
+    <div class="symptoms-grid" id="symptomsList">
+        <!-- Gejala akan muncul di sini -->
+    </div>
+
+    <div class="clear-btn">
+        <button onclick="clearSelection()">🗑️ Hapus Semua Pilihan</button>
+    </div>
+
+    <br>
+    <button class="diagnose-btn" onclick="diagnose()">🔍 Deteksi Sekarang</button>
+
+    <div id="result-area">
+        <h2>📋 Hasil Deteksi:</h2>
+        <div id="resultsContent"></div>
+    </div>
+</div>
+
+<script>
+    // --- DATABASE PENYAKIT ---
+    const diseases = [
+        {
+            name: "Flu (Influenza)",
+            symptoms: ["Demam", "Batuk", "Pusing", "Nyeri Otot", "Hidung Tersumbat", "Sakit Tenggorokan", "Lelah"],
+            remedies: [
+                "🛏️ Istirahat yang cukup (7-8 jam).",
+                "💧 Minum air putih hangat minimal 8 gelas.",
+                "🍲 Konsumsi sup ayam hangat.",
+                "🍯 Minum jahe hangat + madu/lemon.",
+                "💊 Konsumsi vitamin C."
+            ],
+            source: "WHO - Influenza (Flu)",
+            hospital: "Jika demam lebih dari 3 hari, sesak napas, atau tidak membaik, segera ke Puskesmas/RS."
+        },
+        {
+            name: "Demam Berdarah Dengue (DBD)",
+            symptoms: ["Demam Tinggi", "Sakit Kepala", "Nyeri Otot", "Mual", "Bintik Merah Kulit", "Muntah", "Nyeri Belakang Mata"],
+            remedies: [
+                "💧 Minum air putih setidaknya 2-3 liter per hari.",
+                "🥚 Konsumsi makanan tinggi protein (telur, ikan, ayam).",
+                "🫐 Minum jus kurma atau jus buah tinggi elektrolit.",
+                "🧊 Kompres hangat.",
+                "🚫 HINDARI obat aspirin, ibuprofen, atau suntik (memicu pendarahan)."
+            ],
+            source: "CDC - Dengue Fever",
+            hospital: "⚠️ HARUS KE RUMAH SAKIT! Kondisi ini berbahaya. Periksa Trombosit secara berkala."
+        },
+        {
+            name: "Tipes (Demam Tifoid)",
+            symptoms: ["Demam Tinggi", "Sakit Perut", "Mual", "Muntah", "Sembelit", "Lelah", "Nyeri Kepala"],
+            remedies: [
+                "💧 Minum air matang yang cukup.",
+                "🥣 Makan makanan lembut (bubur, nasi tim, sup).",
+                "🚫 Hindari makanan berserat tinggi saat demam tinggi.",
+                "🥛 Konsumsi probiotik (yogurt).",
+                "🍎 Makan buah yang tidak asam."
+            ],
+            source: "Mayo Clinic - Typhoid Fever",
+            hospital: "Sangat disarankan ke dokter untuk mendapatkan antibiotik resep."
+        },
+        {
+            name: "Malaria",
+            symptoms: ["Demam", "Menggigil", "Sakit Kepala", "Keringat Dingin", "Mual", "Muntah", "Nyeri Otot"],
+            remedies: [
+                "🛏️ Istirahat total.",
+                "💊 Minum Paracetamol untuk demam.",
+                "💧 Minum banyak cairan.",
+                "🧊 Kompres hangat.",
+                "🍌 Makan makanan bergizi."
+            ],
+            source: "WHO - Malaria",
+            hospital: "⚠️ WAJIB berobat ke RS/Puskesmas segera untuk mendapat obat Anti-Malaria."
+        },
+        {
+            name: "Pneumonia (Paru-paru Basah)",
+            symptoms: ["Batuk", "Demam", "Sulit Bernapas", "Nyeri Dada", "Lendir Hijau", "Nyeri Dada Saat Bernapas"],
+            remedies: [
+                "💧 Minum hangat.",
+                "🍵 Konsumsi makanan anti-inflamasi (bawang putih, jahe).",
+                "🛏️ Istirahat yang cukup.",
+                "🛋️ Tinggikan kepala saat tidur.",
+                "🌬️ Jaga ventilasi udara ruangan."
+            ],
+            source: "American Lung Association",
+            hospital: "⚠️ Sangat bahaya jika kesulitan bernapas. Segera ke IGD."
+        },
+        {
+            name: "Gastritis (Maag Akut)",
+            symptoms: ["Sakit Perut", "Mual", "Muntah", "Perut Kembung", "Sakit Ulu Hati", "Nyeri Dada"],
+            remedies: [
+                "💧 Minum air putih hangat.",
+                "🥣 Konsumsi makanan lembut (bubur, roti tawar).",
+                "🚫 Hindari makanan pedas, asam, berminyak, dan kopi.",
+                "🧘 Kurangi stres.",
+                "🍵 Minum kunyit atau jahe hangat."
+            ],
+            source: "NIDDK - Gastritis",
+            hospital: "⚠️ Jika muntah darah atau tinja hitam (berdarah), segera ke UGD."
+        },
+        {
+            name: "Migraine (Sakit Kepala Sebelah)",
+            symptoms: ["Sakit Kepala", "Mual", "Sensitif Cahaya", "Pusing", "Sensitif Suara", "Penglihatan Kabur"],
+            remedies: [
+                "🌙 Istirahat di ruangan gelap dan tenang.",
+                "🧊 Kompres dahi/kepala dengan es.",
+                "💧 Minum air putih.",
+                "🧴 Pijat pelipis dengan minyak peppermint.",
+                "☕ Kafein secukupnya (bisa meredakan).",
+                "🧘 Teknik relaksasi pernapasan."
+            ],
+            source: "Mayo Clinic - Migraine",
+            hospital: "Jika sakit kepala tidak membaik > 72 jam atau disertai kelemahan, ke dokter."
+        },
+        {
+            name: "Diare",
+            symptoms: ["Sakit Perut", "Mual", "Muntah", "BAB Cair", "Demam", "Perut Kram"],
+            remedies: [
+                "🧂 Minum Oralit (campuran 1 liter air + 6 sdk teh gula + 1 sdk teh garam).",
+                "🍌 Diet BRAT (Banana, Rice, Apple sauce, Toast).",
+                "🥛 Hindari produk susu sementara.",
+                "🚫 Hindari makanan berlemak dan pedas.",
+                "🍚 Makan nasi hangat."
+            ],
+            source: "CDC - Diarrhea",
+            hospital: "⚠️ Jika diare > 2 hari, ada darah, atau tanda dehidrasi (mulut kering), ke RS."
+        },
+        {
+            name: "Anemia (Kekurangan Darah)",
+            symptoms: ["Lelah", "Pusing", "Pucat", "Sesak Napas", "Jantung Berdebar", "Tangan Kaki Dingin"],
+            remedies: [
+                "🥩 Konsumsi makanan tinggi zat besi (bayam, daging merah, hati, kacang-kacangan).",
+                "🥗 Minum jus bit merah.",
+                "🍊 Konsumsi vitamin C (untuk penyerapan zat besi).",
+                "☕ Hindari teh/kopi saat makan.",
+                "🥦 Makan sayuran hijau gelap."
+            ],
+            source: "NHLBI - Anemia",
+            hospital: "Periksa darah lengkap (Hb) ke laboratorium untuk memastikan penyebabnya."
+        },
+        {
+            name: "Konjungtivitis (Mata Merah)",
+            symptoms: ["Mata Gatal", "Mata Merah", "Berair", "Sensitif Cahaya", "Bengkak", "Lendir Mata"],
+            remedies: [
+                "🧊 Kompres mata dengan kain bersih & hangat (5-10 menit).",
+                "🚿 Jaga kebersihan mata.",
+                "🙅‍♂️ Hindari menyentuh/menggosok mata.",
+                "🧼 Cuci tangan rutin.",
+                "👓 Hindari penggunaan lensa kontak sementara.",
+                "🧴 Gunakan obat tetes mata steril."
+            ],
+            source: "AAO - Pink Eye",
+            hospital: "Jika disertai pandangan kabur, sakit parah, atau tidak membaik, ke dokter mata."
+        },
+        {
+            name: "Asma",
+            symptoms: ["Sesak Napas", "Mengi", "Batuk", "Nyeri Dada", "Sulit Bernapas Malam"],
+            remedies: [
+                "💨 Hindari pemicu asma (debu, asap, bulu hewan).",
+                "💧 Minum hangat.",
+                "🧘 Teknik pernapasan deep breathing.",
+                "☕ Minum kopi hangat (kafein membuka saluran napas).",
+                "🛏️ Tidur dengan bantal tinggi."
+            ],
+            source: "AAFA - Asthma",
+            hospital: "⚠️ Jika serangan parah dan obat tidak membantu, langsung ke UGD."
+        },
+        {
+            name: "Hipotensi (Tekanan Darah Rendah)",
+            symptoms: ["Pusing", "Lelah", "Mual", "Pingsan", "Penglihatan Kabur", "Kedinginan"],
+            remedies: [
+                "🧂 Tingkatkan konsumsi garam (dengan batas normal).",
+                "💧 Minum air putih lebih banyak.",
+                "🍽️ Makan dalam porsi kecil tapi sering.",
+                "
